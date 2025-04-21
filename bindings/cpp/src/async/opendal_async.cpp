@@ -17,12 +17,11 @@
  * under the License.
  */
 
-#include "opendal_async.hpp"
+#include "opendal/opendal_async.hpp"
 
 #include <iterator>
 
-#include "async.rs.h"
-#include "async_defs.hpp"
+#include "bridge/async.rs.h"
 
 #define RUST_STR(s) rust::Str(s.data(), s.size())
 #define RUST_STRING(s) rust::String(s.data(), s.size())

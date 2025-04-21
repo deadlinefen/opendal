@@ -85,13 +85,14 @@ execute_process(COMMAND cargo locate-project --workspace --message-format plain
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 string(REGEX REPLACE "/Cargo.toml\n$" "/target" CARGO_TARGET_DIR "${CARGO_TARGET_DIR}")
 set(CARGO_MANIFEST ${PROJECT_SOURCE_DIR}/Cargo.toml)
-set(RUST_SOURCE_FILE ${PROJECT_SOURCE_DIR}/src/lib.rs)
-list(APPEND RUST_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/src/lib.rs.cc)
-list(APPEND RUST_HEADER_FILE ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/src/lib.rs.h)
+set(RUST_SOURCE_FILE ${PROJECT_SOURCE_DIR}/bridge/lib.rs)
+list(APPEND RUST_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/bridge/lib.rs.cc)
+list(APPEND RUST_HEADER_FILE ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/bridge/lib.rs.h)
 if (OPENDAL_ENABLE_ASYNC)
-    list(APPEND RUST_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/src/async.rs.cc)
-    list(APPEND RUST_HEADER_FILE ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/src/async.rs.h)
+    list(APPEND RUST_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/bridge/async.rs.cc)
+    list(APPEND RUST_HEADER_FILE ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/bridge/async.rs.h)
 endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(RUST_LIB ${CARGO_TARGET_DIR}/debug/${CMAKE_STATIC_LIBRARY_PREFIX}opendal_cpp${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
@@ -101,17 +102,27 @@ endif()
 set(CPP_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/src
                     ${CARGO_TARGET_DIR}/cxxbridge
-                    ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp/src)
+                    ${CARGO_TARGET_DIR}/cxxbridge/opendal-cpp)
 
-file(GLOB CPP_SOURCE_FILE "src/details/*.cpp")
-file(GLOB CPP_HEADER_FILE "src/details/*.hpp")
-
-list(APPEND CPP_SOURCE_FILE src/opendal.cpp)
-list(APPEND CPP_HEADER_FILE include/opendal.hpp)
+file(GLOB CPP_SOURCE_FILE 
+    "src/*.cpp"
+    "src/utils/*.cpp"    
+)
+file(GLOB CPP_HEADER_FILE 
+    "include/opendal/*.hpp"
+    "src/*.hpp"
+    "src/utils/*.hpp"
+)
 if (OPENDAL_ENABLE_ASYNC)
-    list(APPEND CPP_SOURCE_FILE src/opendal_async.cpp)
-    list(APPEND CPP_HEADER_FILE include/opendal_async.hpp)
+    file(GLOB ASYNC_SOURCE_FILE "src/async/*.cpp")
+    list(APPEND CPP_SOURCE_FILE ${ASYNC_SOURCE_FILE})
+else()
+    file(GLOB ASYNC_HEADER_FILE "include/opendal/*_async.hpp")
+    list(REMOVE_ITEM CPP_HEADER_FILE ${ASYNC_HEADER_FILE})
 endif()
+
+message(STATUS "CPP_SOURCE_FILE: ${CPP_SOURCE_FILE}")
+message(STATUS "CPP_HEADER_FILE: ${CPP_HEADER_FILE}")
 
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND CARGO_BUILD_FLAGS "--release")
@@ -135,7 +146,7 @@ else()
     # fetch Boost
     FetchContent_Declare(
         Boost
-        URL https://github.com/boostorg/boost/releases/download/boost-${OPENDAL_BOOST_VERSION}/boost-${OPENDAL_BOOST_VERSION}-cmake.zip
+        URL https://github.com/boostorg/boost/releases/download/boost-${OPENDAL_BOOST_VERSION}/boost-${OPENDAL_BOOST_VERSION}-cmake.tar.gz
     )
 
     set(BOOST_INCLUDE_LIBRARIES date_time iostreams system)
@@ -149,7 +160,7 @@ target_sources(opendal_cpp PRIVATE ${RUST_HEADER_FILE})
 target_include_directories(opendal_cpp PUBLIC ${CPP_INCLUDE_DIR})
 if (OPENDAL_ENABLE_ASYNC)
     target_include_directories(opendal_cpp PUBLIC ${CARGO_TARGET_DIR}/cxxbridge)
-    target_compile_options(opendal_cpp PUBLIC -include ${PROJECT_SOURCE_DIR}/include/async_defs.hpp)
+    target_compile_options(opendal_cpp PUBLIC -include ${PROJECT_SOURCE_DIR}/include/opendal/defination_async.hpp)
 endif()
 target_link_libraries(opendal_cpp PUBLIC ${RUST_LIB} Boost::date_time Boost::iostreams)
 target_link_libraries(opendal_cpp PRIVATE ${CMAKE_DL_LIBS})

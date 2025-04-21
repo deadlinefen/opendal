@@ -19,36 +19,47 @@
 
 #pragma once
 
+#include <cstdint>
 #include <optional>
-#include <span>
+#include <string>
 
-#include "async.rs.h"
-#include "async_defs.hpp"
+#include "boost/date_time/posix_time/ptime.hpp"
 
-namespace opendal::async {
+namespace opendal {
 
-class Operator {
- public:
-  Operator(std::string_view scheme,
-           const std::unordered_map<std::string, std::string> &config = {});
-
-  // Disable copy and assign
-  Operator(const Operator &) = delete;
-  Operator &operator=(const Operator &) = delete;
-
-  // Enable move
-  Operator(Operator &&) = default;
-  Operator &operator=(Operator &&) = default;
-  ~Operator() = default;
-
-  using ReadFuture = opendal::ffi::async::RustFutureRead;
-  ReadFuture read(std::string_view path);
-
-  using WriteFuture = opendal::ffi::async::RustFutureWrite;
-  WriteFuture write(std::string_view path, std::span<uint8_t> data);
-
- private:
-  rust::Box<opendal::ffi::async::Operator> operator_;
+/**
+ * @enum EntryMode
+ * @brief The mode of the entry
+ */
+enum class EntryMode : int {
+  FILE = 1,
+  DIR = 2,
+  UNKNOWN = 0,
 };
 
-}  // namespace opendal::async
+/**
+ * @struct Metadata
+ * @brief The metadata of a file or directory
+ */
+class Metadata {
+ public:
+  EntryMode type;
+  std::uint64_t content_length;
+  std::optional<std::string> cache_control;
+  std::optional<std::string> content_disposition;
+  std::optional<std::string> content_md5;
+  std::optional<std::string> content_type;
+  std::optional<std::string> etag;
+  std::optional<boost::posix_time::ptime> last_modified;
+};
+
+/**
+ * @struct Entry
+ * @brief The entry of a file or directory
+ */
+class Entry {
+ public:
+  std::string path;
+};
+
+}  // namespace opendal

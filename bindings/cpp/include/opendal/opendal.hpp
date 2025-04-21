@@ -19,56 +19,23 @@
 
 #pragma once
 
-#include <cstdint>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "boost/date_time/posix_time/ptime.hpp"
+#include "opendal/data_structure.hpp"
 #include "boost/iostreams/concepts.hpp"
 #include "boost/iostreams/stream.hpp"
 
 namespace opendal {
 
-namespace details {
+namespace ffi {
 class Operator;
 class Reader;
 class Lister;
-}  // namespace details
+}  // namespace ffi
 
-/**
- * @enum EntryMode
- * @brief The mode of the entry
- */
-enum class EntryMode : int {
-  FILE = 1,
-  DIR = 2,
-  UNKNOWN = 0,
-};
-
-/**
- * @struct Metadata
- * @brief The metadata of a file or directory
- */
-struct Metadata {
-  EntryMode type;
-  std::uint64_t content_length;
-  std::optional<std::string> cache_control;
-  std::optional<std::string> content_disposition;
-  std::optional<std::string> content_md5;
-  std::optional<std::string> content_type;
-  std::optional<std::string> etag;
-  std::optional<boost::posix_time::ptime> last_modified;
-};
-
-/**
- * @struct Entry
- * @brief The entry of a file or directory
- */
-struct Entry {
-  std::string path;
-};
 
 class Reader;
 class Lister;
@@ -200,7 +167,7 @@ class Operator {
   Lister lister(std::string_view path);
 
  private:
-  std::unique_ptr<details::Operator> operator_;
+  ffi::Operator *operator_{nullptr};
 };
 
 /**
@@ -215,8 +182,6 @@ class Operator {
 class Reader
     : public boost::iostreams::device<boost::iostreams::input_seekable> {
  public:
-  Reader(std::unique_ptr<details::Reader> &&reader);
-
   Reader(Reader &&);
 
   ~Reader();
@@ -226,7 +191,11 @@ class Reader
   std::streampos seek(std::streamoff off, std::ios_base::seekdir way);
 
  private:
-  std::unique_ptr<details::Reader> raw_reader_;
+  friend class Operator;
+
+  Reader(ffi::Reader *pointer);
+
+  ffi::Reader *raw_reader_{nullptr};
 };
 
 // Boost IOStreams requires it to be copyable. So we need to use
@@ -265,8 +234,6 @@ class ReaderStream
  */
 class Lister {
  public:
-  Lister(std::unique_ptr<details::Lister> lister);
-
   Lister(Lister &&);
 
   ~Lister();
@@ -325,7 +292,11 @@ class Lister {
   Iterator end() { return Iterator(*this, true); }
 
  private:
-  std::unique_ptr<details::Lister> raw_lister_;
+  friend class Operator;
+
+  Lister(ffi::Lister *pointer);
+
+  ffi::Lister *raw_lister_{nullptr};
 };
 
 }  // namespace opendal

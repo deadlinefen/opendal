@@ -27,6 +27,7 @@ repository = "https://github.com/apache/opendal"
 rust-version = "1.80"
 
 [lib]
+path = "bridge/lib.rs"
 crate-type = ["staticlib"]
 
 [dependencies]

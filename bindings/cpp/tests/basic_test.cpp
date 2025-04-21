@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "opendal.hpp"
+#include "opendal/opendal.hpp"
 
 class OpendalTest : public ::testing::Test {
  protected:

@@ -22,7 +22,7 @@
 #include "cppcoro/sync_wait.hpp"
 #include "cppcoro/task.hpp"
 #include "gtest/gtest.h"
-#include "opendal_async.hpp"
+#include "opendal/opendal_async.hpp"
 
 class AsyncOpendalTest : public ::testing::Test {
  protected:

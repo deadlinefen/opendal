@@ -19,40 +19,28 @@
 
 #pragma once
 
-#include "lib.rs.h"
+#include "rust/cxx.h"
 
-/**
- * @class Lister
- * @brief Lister is designed to list the entries of a directory.
- * @details It provides next operation to get the next entry. You can also use
- * it like an iterator.
- * @code{.cpp}
- * auto lister = operator.lister("dir/");
- * for (const auto &entry : lister) {
- *   // Do something with entry
- * }
- * @endcode
- */
-namespace opendal::details {
+namespace opendal::utils {
 
-class Lister {
- public:
-  Lister(rust::Box<opendal::ffi::Lister> &&lister)
-      : raw_lister_{std::move(lister)} {}
+template <typename T>
+auto rust_str(T &&s) -> decltype(s.data(), s.size(), rust::Str()) {
+  return rust::Str(s.data(), s.size());
+}
 
-  Lister(Lister &&) = default;
+template <typename T>
+auto rust_string(T &&s) -> decltype(s.data(), s.size(), rust::String()) {
+  return rust::String(s.data(), s.size());
+}
 
-  ~Lister() = default;
+template <typename T, typename Container>
+auto rust_slice(Container &&s)
+    -> decltype(s.data(), s.size(), rust::Slice<T>()) {
+  using Elem = std::remove_pointer_t<decltype(s.data())>;
+  static_assert(std::is_convertible_v<Elem, T>,
+                "Container element type must be convertible to T");
 
-  /**
-   * @brief Get the next entry of the lister
-   *
-   * @return The next entry of the lister
-   */
-  ffi::OptionalEntry next() { return raw_lister_->next(); }
+  return rust::Slice<T>(reinterpret_cast<T *>(s.data()), s.size());
+}
 
- private:
-  rust::Box<opendal::ffi::Lister> raw_lister_;
-};
-
-}  // namespace opendal::details
+}  // namespace opendal::utils

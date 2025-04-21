@@ -17,9 +17,24 @@
  * under the License.
  */
 
-#include "details/reader.hpp"
+#include "bridge/lib.rs.h"
+#include "opendal/opendal.hpp"
 
-namespace opendal::details {
+namespace opendal {
+
+Reader::Reader(ffi::Reader *reader) : raw_reader_{reader} {}
+
+Reader::Reader(Reader &&) = default;
+
+Reader::~Reader() {
+  if (raw_reader_) {
+    ffi::delete_reader(raw_reader_);
+  }
+}
+
+std::streamsize Reader::read(void *s, std::streamsize n) {
+  return raw_reader_->read(rust::Slice<uint8_t>(static_cast<uint8_t *>(s), n));
+}
 
 ffi::SeekDir rust_seek_dir(std::ios_base::seekdir dir) {
   switch (dir) {
@@ -37,12 +52,8 @@ ffi::SeekDir rust_seek_dir(std::ios_base::seekdir dir) {
   }
 }
 
-std::size_t Reader::read(void *s, std::size_t n) {
-  return reader_->read(rust::Slice<uint8_t>(static_cast<uint8_t *>(s), n));
+std::streampos Reader::seek(std::streamoff off, std::ios_base::seekdir dir) {
+  return raw_reader_->seek(off, rust_seek_dir(dir));
 }
 
-std::uint64_t Reader::seek(std::uint64_t off, std::ios_base::seekdir dir) {
-  return reader_->seek(off, rust_seek_dir(dir));
-}
-
-}  // namespace opendal::details
+}  // namespace opendal

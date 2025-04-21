@@ -17,10 +17,12 @@
  * under the License.
  */
 
-#pragma once
+#include "utils/ffi_converter.hpp"
 
-#include "rust/cxx.h"
-#include "rust/cxx_async.h"
-
-CXXASYNC_DEFINE_FUTURE(rust::Vec<uint8_t>, opendal, ffi, async, RustFutureRead);
-CXXASYNC_DEFINE_FUTURE(void, opendal, ffi, async, RustFutureWrite);
+namespace opendal::utils {
+Entry parse_entry(ffi::Entry &&other) {
+  return Entry{
+      .path = std::string(std::move(other.path)),
+  };
+}
+}  // namespace opendal::utils

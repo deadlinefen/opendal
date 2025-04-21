@@ -19,57 +19,38 @@
 
 #pragma once
 
-#include <string>
+#include <span>
 #include <string_view>
-#include <unordered_map>
 
-#include "lib.rs.h"
+#include "opendal/defination_async.hpp"
 
-namespace opendal::details {
+// dependencies defination_async.hpp
+#include "bridge/async.rs.h"
+
+namespace opendal::async {
 
 class Operator {
  public:
   Operator(std::string_view scheme,
-           const std::unordered_map<std::string, std::string> &config = {})
-      : operator_(create_by_config(scheme, config)) {}
+           const std::unordered_map<std::string, std::string> &config = {});
 
+  // Disable copy and assign
   Operator(const Operator &) = delete;
   Operator &operator=(const Operator &) = delete;
 
+  // Enable move
   Operator(Operator &&) = default;
   Operator &operator=(Operator &&) = default;
   ~Operator() = default;
 
-  std::string read(std::string_view path);
+  using ReadFuture = opendal::ffi::async::RustFutureRead;
+  ReadFuture read(std::string_view path);
 
-  void write(std::string_view path, std::string_view data);
-
-  rust::Box<ffi::Reader> reader(std::string_view path);
-
-  bool exists(std::string_view path);
-
-  void create_dir(std::string_view path);
-
-  void copy(std::string_view src, std::string_view dst);
-
-  void rename(std::string_view src, std::string_view dst);
-
-  void remove(std::string_view path);
-
-  ffi::Metadata stat(std::string_view path);
-
-  rust::Vec<ffi::Entry> list(std::string_view path);
-
-  rust::Box<ffi::Lister> lister(std::string_view path);
+  using WriteFuture = opendal::ffi::async::RustFutureWrite;
+  WriteFuture write(std::string_view path, std::span<uint8_t> data);
 
  private:
-  using OperatorBox = rust::Box<opendal::ffi::Operator>;
-  using ConfigMap = std::unordered_map<std::string, std::string>;
-
-  OperatorBox create_by_config(std::string_view scheme,
-                               const ConfigMap &config);
-
-  OperatorBox operator_;
+  rust::Box<opendal::ffi::async::Operator> operator_;
 };
 
-}  // namespace opendal::details
+}  // namespace opendal::async

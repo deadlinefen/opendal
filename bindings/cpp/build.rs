@@ -47,14 +47,14 @@ mod build_async {
 }
 
 fn main() {
-    let _ = cxx_build::bridge("src/lib.rs");
+    let _ = cxx_build::bridge("bridge/lib.rs");
     #[cfg(feature = "async")]
     {
-        let _ = cxx_build::bridge("src/async.rs");
+        let _ = cxx_build::bridge("bridge/async.rs");
         build_async::symlink_async_includes();
     }
 
-    println!("cargo:rerun-if-changed=src/lib.rs");
+    println!("cargo:rerun-if-changed=bridge/lib.rs");
     #[cfg(feature = "async")]
-    println!("cargo:rerun-if-changed=src/async.rs");
+    println!("cargo:rerun-if-changed=bridge/async.rs");
 }

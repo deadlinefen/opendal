@@ -17,35 +17,11 @@
  * under the License.
  */
 
-#pragma once
+ #pragma once
 
-#include "lib.rs.h"
-
-namespace opendal::details {
-/**
- * @class Reader
- * @brief Reader is designed to read data from the operator.
- * @details It provides basic read and seek operations. If you want to use it
- * like a stream, you can use `ReaderStream` instead.
- * @code{.cpp}
- * opendal::ReaderStream stream(operator.reader("path"));
- * @endcode
- */
-class Reader {
- public:
-  Reader(rust::Box<opendal::ffi::Reader> &&reader)
-      : reader_(std::move(reader)) {}
-
-  Reader(Reader &&) = default;
-
-  ~Reader() = default;
-
-  std::size_t read(void *s, std::size_t n);
-
-  std::uint64_t seek(std::uint64_t off, std::ios_base::seekdir dir);
-
- private:
-  rust::Box<opendal::ffi::Reader> reader_;
-};
-
-}  // namespace opendal::details
+ #include "rust/cxx.h"
+ #include "rust/cxx_async.h"
+ 
+ CXXASYNC_DEFINE_FUTURE(rust::Vec<uint8_t>, opendal, ffi, async, RustFutureRead);
+ CXXASYNC_DEFINE_FUTURE(void, opendal, ffi, async, RustFutureWrite);
+ 

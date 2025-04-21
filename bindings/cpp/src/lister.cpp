@@ -17,30 +17,31 @@
  * under the License.
  */
 
-#pragma once
+#include "bridge/lib.rs.h"
+#include "opendal/data_structure.hpp"
+#include "opendal/opendal.hpp"
+#include "utils/ffi_converter.hpp"
 
-#include "rust/cxx.h"
+namespace opendal {
 
-namespace opendal::details {
+Lister::Lister(ffi::Lister *lister) : raw_lister_{lister} {};
 
-template <typename T>
-auto rust_str(T &&s) -> decltype(s.data(), s.size(), rust::Str()) {
-  return rust::Str(s.data(), s.size());
+Lister::Lister(Lister &&) = default;
+
+Lister::~Lister() {
+  if (raw_lister_) {
+    ffi::delete_lister(raw_lister_);
+  }
 }
 
-template <typename T>
-auto rust_string(T &&s) -> decltype(s.data(), s.size(), rust::String()) {
-  return rust::String(s.data(), s.size());
+std::optional<Entry> Lister::next() {
+  auto entry = raw_lister_->next();
+
+  if (!entry.has_value) {
+    return std::nullopt;
+  }
+
+  return utils::parse_entry(std::move(entry.value));
 }
 
-template <typename T, typename Container>
-auto rust_slice(Container &&s)
-    -> decltype(s.data(), s.size(), rust::Slice<T>()) {
-  using Elem = std::remove_pointer_t<decltype(s.data())>;
-  static_assert(std::is_convertible_v<Elem, T>,
-                "Container element type must be convertible to T");
-
-  return rust::Slice<T>(reinterpret_cast<T *>(s.data()), s.size());
-}
-
-}  // namespace opendal::details
+}  // namespace opendal
